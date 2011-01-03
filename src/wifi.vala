@@ -25,11 +25,11 @@ namespace iliwi {
     public signal void status_change();
     public signal void network_list_change();
     
-    unowned Thread thread;
+    unowned Thread<void*> thread;
     
     public Wifi() {
       try {
-        thread = Thread.create(WifiThread.run_thread, true);
+        thread = Thread.create<void*>(WifiThread.run_thread, true);
       } catch(Error e) {
         critical("Couldn't start wifi-thread!");
       }
@@ -270,7 +270,7 @@ namespace iliwi {
       }
     }
     public static void connect_to_network(Network network) {
-      disconnect();
+      disconnectt();
       wifi.set_new_status("connecting..");
       connect_network = network;
       network.set_new_status(NetworkStatus.CONNECTING);
@@ -317,7 +317,7 @@ namespace iliwi {
       }
       status = NetworkStatus.CONNECT;
     }
-    private static void disconnect() {
+    private static void disconnectt() {
       status = NetworkStatus.UNCONNECTED;
       try {
         Process.spawn_sync(null, {Environment.find_program_in_path("killall"),"wpa_supplicant"}, null, GLib.SpawnFlags.STDERR_TO_DEV_NULL, null);
@@ -372,7 +372,7 @@ namespace iliwi {
       networks = new HashMap<string,Network>(str_hash,str_equal);
       visible_networks = new ArrayList<Network>();
       status = NetworkStatus.UNCONNECTED;
-      disconnect();
+      disconnectt();
       load_preferred_networks();
       scan();
     }
