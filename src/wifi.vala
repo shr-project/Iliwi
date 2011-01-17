@@ -164,7 +164,6 @@ namespace iliwi {
   
   private class WifiThread : GLib.Object {
     static MainLoop loop;
-    static DBus.Connection conn;
     //static Manager manager;
     static Usage fso_usage;
     
@@ -348,12 +347,11 @@ namespace iliwi {
     
     private static void initialize() {
       try {
-        conn = DBus.Bus.get (DBus.BusType.SYSTEM);
-        fso_usage = (Usage) conn.get_object("org.freesmartphone.ousaged",
-                                      "/org/freesmartphone/Usage");
+        fso_usage = Bus.get_proxy_sync (BusType.SYSTEM, "org.freesmartphone.ousaged",
+														"/org/freesmartphone/Usage");
         fso_usage.RequestResource("WiFi"); // Turn on wifi
         fso_usage.RequestResource("CPU");
-      } catch(Error e) {
+      } catch(IOError e) {
         debug("DBus error!");
       }
       

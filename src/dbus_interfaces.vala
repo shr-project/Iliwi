@@ -15,10 +15,13 @@
 */
 
 
-[DBus (name = "org.freesmartphone.Usage")]
-interface Usage : GLib.Object {
-  public abstract void RequestResource(string resource) throws DBus.Error;
-  public abstract void ReleaseResource(string resource) throws DBus.Error;
+[DBus (name = "org.freesmartphone.Usage", timeout = 120000)]
+public interface Usage: GLib.Object {
+
+	public abstract void RequestResource(string resource) throws IOError;
+	public abstract void ReleaseResource(string resource) throws IOError;
+
+
 }
 
 /*
