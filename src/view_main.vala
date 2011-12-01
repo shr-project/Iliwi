@@ -42,13 +42,13 @@ namespace iliwi.View {
     
     //itc.item_style = "double_label";
     itc.item_style = "default";
-    itc.func.label_get = genlist_get_label;
+    itc.func.text_get = genlist_get_label;
     itc.func.content_get = null;
     itc.func.state_get = null;
     itc.func.del = null;
 
     itc2.item_style = "default";
-    itc2.func.label_get = certlist_get_label;
+    itc2.func.text_get = certlist_get_label;
     itc2.func.content_get = null;
     itc2.func.state_get = null;
     itc2.func.del = null;
