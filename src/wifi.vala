@@ -18,15 +18,15 @@ using Gee;
 using Elm;
 
 namespace iliwi {
-  
+
   public class Wifi : GLib.Object {
     public string status { get; private set; default="initializing"; }
-    
+
     public signal void status_change();
     public signal void network_list_change();
-    
+
     unowned Thread<void*> thread;
-    
+
     public Wifi() {
       try {
         thread = Thread.create<void*>(WifiThread.run_thread, true);
@@ -38,11 +38,11 @@ namespace iliwi {
       WifiThread.stop_thread();
       thread.join(); // Wait for it to finish
     }
-    
+
     public Network[] get_visible_networks() {
       return WifiThread.get_visible_networks();
     }
-    
+
     public void connect_to(Network network) {
       WifiThread.connect_to_network(network);
     }
@@ -54,7 +54,7 @@ namespace iliwi {
       network.password_in_ascii = new_state;
       WifiThread.preferred_state_change(network);
     }
-    
+
     public void preferred_network_password_change(Network network) {
       WifiThread.preferred_state_change(network);
     }
@@ -77,14 +77,14 @@ namespace iliwi {
       network_list_change();
     }
   }
-  
+
   public enum NetworkStatus {
     UNCONNECTED,
     CONNECT, // About to connect
     CONNECTING,
     CONNECTED
   }
-  
+
   struct PreferredNetwork {
     string password;
     bool password_in_ascii;
@@ -92,7 +92,7 @@ namespace iliwi {
     string cert;
     string cert_dir;
   }
-  
+
   public class Network {
     public string address;
     public string essid = "";
@@ -111,26 +111,27 @@ namespace iliwi {
     public bool preferred_network = false;
     public unowned GenlistItem listitem = null;
     public NetworkStatus status {get; private set; default=NetworkStatus.UNCONNECTED;}
-    
+
     public bool valid_network() {
       return (address!=null);
     }
     public string pretty_string() {
       string info_str = "";
-      if(encryption && (!authentication))
+      if (encryption && (!authentication)) {
         info_str = "(enc)";
-      else if (encryption && authentication)
+      } else if (encryption && authentication) {
         info_str = "(enc+auth)";
-      if (adhoc)
+      }
+      if (adhoc) {
         info_str = info_str + "~";
+      }
       string status_str = "";
-      if (status == NetworkStatus.CONNECTING)
+      if (status == NetworkStatus.CONNECTING) {
         status_str = "CONNECTING ";
-      else if (status == NetworkStatus.CONNECTED)
+      } else if (status == NetworkStatus.CONNECTED) {
         status_str = "CONNECTED ";
-      return "%s%i%% %s %s".printf(
-        status_str, strength, info_str, essid
-      );
+      }
+      return "%s%i%% %s %s".printf(status_str, strength, info_str, essid);
       /*return "Address:%s Essid:%s Encryption:%s Strength:%i".printf(
         address, essid, info_str, strength
       );*/
@@ -139,47 +140,49 @@ namespace iliwi {
     public string get_title() {
       return essid;
     }
-    
+
     public void set_new_status(NetworkStatus _status) {
       status = _status;
       update_view();
     }
     public void set_strength(int i, bool update_list=true) {
       strength = i;
-      if( update_list )
+      if (update_list) {
         update_view();
+      }
     }
     public void set_encyption_to_wpa() {
       wpa_encryption = true;
     }
-    
+
     private void update_view() {
-      if( listitem!=null )
+      if (listitem != null) {
         listitem.update();
+      }
     }
   }
-  
-  
+
+
   const int TIMEOUT_SECONDS = 2;
   const int ZERO_NETWORKS_SCAN_SECONDS = 4;
   const int NONZERO_NETWORKS_SCAN_SECONDS = 20;
   const int CONNECTED_SCAN_SECONDS = 300;
-  
+
   private class WifiThread : GLib.Object {
     static MainLoop loop;
     //static Manager manager;
     static Usage fso_usage;
-    
+
     static HashMap<string,PreferredNetwork?> preferred_networks;
     static HashMap<string,Network> networks;
     static ArrayList<Network> visible_networks;
     static NetworkStatus status;
-    
+
     static string wireless_interface;
-    
+
     static unowned Network? connection_suggestion;
     static unowned Network? connect_network;
-    
+
     static Regex line_regex_start_address;
     static Regex line_regex_essid;
     static Regex line_regex_encryption;
@@ -188,29 +191,30 @@ namespace iliwi {
     static Regex line_regex_adhoc;
     static Regex line_regex_wpa_enc;
     static Regex line_regex_wpa_enc_auth;
-    
+
     static int seconds_since_last_scan;
-    
+
     public static void* run_thread() {
       loop = new MainLoop(null, false);
-      
+
       WifiThread.initialize();
-      
+
       var time = new TimeoutSource.seconds(TIMEOUT_SECONDS);
       time.set_callback(() => {
-        if( status == NetworkStatus.UNCONNECTED ) {
-          if( networks.size==0 && seconds_since_last_scan>=ZERO_NETWORKS_SCAN_SECONDS ) {
+        if (status == NetworkStatus.UNCONNECTED) {
+          if (networks.size==0 && seconds_since_last_scan>=ZERO_NETWORKS_SCAN_SECONDS) {
             scan();
-          } else if( networks.size>0 && seconds_since_last_scan>=NONZERO_NETWORKS_SCAN_SECONDS ) {
+          } else if (networks.size>0 && seconds_since_last_scan>=NONZERO_NETWORKS_SCAN_SECONDS) {
             scan();
           }
           unowned Network? suggestion = suggest_network();
-          if( suggestion!=null )
+          if (suggestion!=null) {
             connect_to_network(suggestion);
-        } else if( seconds_since_last_scan>=CONNECTED_SCAN_SECONDS ) {
+          }
+        } else if (seconds_since_last_scan>=CONNECTED_SCAN_SECONDS) {
           scan();
         }
-        if( status == NetworkStatus.CONNECT ) {
+        if (status == NetworkStatus.CONNECT) {
           run_dhcp();
         }
         seconds_since_last_scan += TIMEOUT_SECONDS;
@@ -218,7 +222,7 @@ namespace iliwi {
       });
       time.attach(loop.get_context());
 
-      
+
       loop.run();
       time = null;
       try {
@@ -241,17 +245,18 @@ namespace iliwi {
       return n;
     }
     public static void preferred_state_change(Network network) {
-      if(network.preferred_network) {
+      if (network.preferred_network) {
         preferred_networks.set(network.address, PreferredNetwork() {
           password = network.password,
-          password_in_ascii = network.password_in_ascii, 
+          password_in_ascii = network.password_in_ascii,
           username = network.username,
           cert = network.cert,
           cert_dir = network.cert_dir
         });
       } else {
-        if( preferred_networks.has_key(network.address) )
+        if (preferred_networks.has_key(network.address)) {
           preferred_networks.unset(network.address);
+        }
       }
     }
     public static void connect_to_network(Network network) {
@@ -259,53 +264,57 @@ namespace iliwi {
       wifi.set_new_status("connecting..");
       connect_network = network;
       network.set_new_status(NetworkStatus.CONNECTING);
-      
+
       DirUtils.create_with_parents(Environment.get_user_config_dir() + "/iliwi",0755);
       string filename = Environment.get_user_config_dir() + "/iliwi/wpa_supplicant.conf";
       string password = network.password;
-      if(network.password_in_ascii)
+      if (network.password_in_ascii) {
         password = "\""+network.password+"\"";
+      }
       var stream = FileStream.open(filename, "w");
       stream.puts( "ctrl_interface=/var/run/wpa_supplicant\n" );
-      if( network.adhoc ) {
+      if (network.adhoc) {
         stream.puts("ap_scan=2\n");
       }
       stream.puts( "network={\n" );
       stream.puts( "  ssid=\"%s\"\n".printf(network.essid) );
-    if( network.encryption )
-      if ( network.wpa_encryption && (!network.authentication) ) { // WPA-Personal
-        stream.puts("  psk=%s\n".printf(password));
-        if ( network.adhoc ) {
-          stream.puts("  proto=WPA\n");
-          stream.puts("  key_mgmt=WPA-NONE\n");
-          stream.puts("  pairwise=NONE\n");
-          stream.puts("  group=TKIP\n");
+      if (network.encryption) {
+        if (network.wpa_encryption && (!network.authentication)) { // WPA-Personal
+          stream.puts("  psk=%s\n".printf(password));
+          if (network.adhoc) {
+            stream.puts("  proto=WPA\n");
+            stream.puts("  key_mgmt=WPA-NONE\n");
+            stream.puts("  pairwise=NONE\n");
+            stream.puts("  group=TKIP\n");
+          }
         }
+        else if (network.wpa_encryption && network.authentication) { // WPA-Enterprise
+          stream.puts("  password=\"%s\"\n".printf(network.password));
+          stream.puts("  key_mgmt=WPA-EAP\n");
+          stream.puts("  pairwise=CCMP TKIP\n");
+          stream.puts("  group=CCMP TKIP\n");
+          stream.puts("  eap=PEAP\n");
+          if (network.cert != "") {
+            stream.puts("  ca_cert=\"%s%s\"\n".printf(network.cert_dir, network.cert));
+          }
+          stream.puts("  identity=\"%s\"\n".printf(network.username));
+          stream.puts("  phase1=\"peaplabel=0\"\n");
+          stream.puts("  phase2=\"auth=MSCHAPV2\"\n");
+        } else { // WEP encryption
+          stream.puts("  key_mgmt=NONE\n");
+          stream.puts("  wep_key0=%s\n".printf(password));
+        }
+      } else {
+        stream.puts( "  key_mgmt=NONE\n" ); // No encryption
       }
-      else if ( network.wpa_encryption && network.authentication ) { // WPA-Enterprise
-        stream.puts("  password=\"%s\"\n".printf(network.password));
-        stream.puts("  key_mgmt=WPA-EAP\n");
-        stream.puts("  pairwise=CCMP TKIP\n");
-        stream.puts("  group=CCMP TKIP\n");
-        stream.puts("  eap=PEAP\n");
-        if ( network.cert != "" )
-          stream.puts("  ca_cert=\"%s%s\"\n".printf(network.cert_dir, network.cert));
-        stream.puts("  identity=\"%s\"\n".printf(network.username));
-        stream.puts("  phase1=\"peaplabel=0\"\n");
-        stream.puts("  phase2=\"auth=MSCHAPV2\"\n");
+
+      if (network.adhoc) {
+        stream.puts("  mode=1\n");
       }
-      else { // WEP encryption                                                                                                                           
-        stream.puts("  key_mgmt=NONE\n");
-        stream.puts("  wep_key0=%s\n".printf(password));
-      }
-    else
-      stream.puts( "  key_mgmt=NONE\n" ); // No encryption
-    if( network.adhoc ) {
-      stream.puts("  mode=1\n");
-    }
-    stream.puts( "}\n" );
-    stream.flush();
-    stream = null;
+
+      stream.puts( "}\n" );
+      stream.flush();
+      stream = null;
 
       try {
         string[] supplicant_args = {Environment.find_program_in_path("wpa_supplicant"),"-i", wireless_interface, "-c", filename,"-B"};
@@ -322,19 +331,19 @@ namespace iliwi {
         FileUtils.remove("/var/run/wpa_supplicant/eth0");
       } catch(GLib.SpawnError e) {
       }
-      if( connect_network!=null ) {
+      if (connect_network != null) {
         connect_network.set_new_status(NetworkStatus.UNCONNECTED);
         connect_network = null;
       }
     }
-    
+
     private static void run_dhcp() {
       try {
         string udhcpc_result = "";
         Process.spawn_sync(null, {Environment.find_program_in_path("udhcpc"),"-i",wireless_interface,"-n","-R"}, null, GLib.SpawnFlags.STDERR_TO_DEV_NULL, null, out udhcpc_result);
         Regex regex_ip = new Regex("""\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}""");
         MatchInfo result;
-        if( regex_ip.match(udhcpc_result,0,out result) ) { // We got an ip
+        if (regex_ip.match(udhcpc_result,0,out result)) { // We got an ip
           connect_network.set_new_status( NetworkStatus.CONNECTED );
           status = NetworkStatus.CONNECTED;
           wifi.set_new_status("idle");
@@ -343,7 +352,7 @@ namespace iliwi {
         debug("Couldn't start spawn or regex failed!");
       }
     }
-    
+
     private static void initialize() {
       try {
         fso_usage = Bus.get_proxy_sync (BusType.SYSTEM, "org.freesmartphone.ousaged",
@@ -365,7 +374,7 @@ namespace iliwi {
       } catch(Error e) {
         debug("Regex error!");
       }
-      
+
       networks = new HashMap<string,Network>(str_hash,str_equal);
       visible_networks = new ArrayList<Network>();
       status = NetworkStatus.UNCONNECTED;
@@ -373,23 +382,23 @@ namespace iliwi {
       load_preferred_networks();
       scan();
     }
-    
+
     private static void load_preferred_networks() {
       string filename = Environment.get_user_config_dir() + "/iliwi/preferred_networks";
       var in_stream = FileStream.open(filename, "r");
       string line;
       preferred_networks = new HashMap<string,PreferredNetwork?>(str_hash,str_equal);
-      
+
       try {
         Regex regex_line = new Regex("""^([0-9A-Z:]{17}) \"(.*)\"(h)? \"(.*)\" \"(.*)\" \"(.*)\"$""");
         MatchInfo result;
-        
+
         while( (line=in_stream.read_line())!=null ) {
-          if( regex_line.match(line,0,out result) ) { // Parse option
-            
+          if (regex_line.match(line,0,out result)) { // Parse option
+
             preferred_networks.set(result.fetch(1), PreferredNetwork() {
               password = result.fetch(2),
-              password_in_ascii = (result.fetch(3)!="h"), 
+              password_in_ascii = (result.fetch(3)!="h"),
               username = result.fetch(4),
               cert = result.fetch(5),
               cert_dir = result.fetch(6)
@@ -429,50 +438,52 @@ namespace iliwi {
       string[] lines = iwlist_result.split("\n");
       MatchInfo result;
       Network current_network = null;
-      
+
       lock (visible_networks) {
         foreach(Network n in visible_networks)
-          n.set_strength(0,false); 
+          n.set_strength(0,false);
         visible_networks.clear();
         foreach(string line in lines) {
-          if( line_regex_essid.match(line,0,out result) )
+          if (line_regex_essid.match(line,0,out result)) {
             current_network.essid = result.fetch(1);
-          else if( line_regex_encryption.match(line,0,out result) )
+          } else if (line_regex_encryption.match(line,0,out result)) {
             current_network.encryption = true;
-          else if (line_regex_wpa_enc_auth.match(line,0,out result)) {
+          } else if (line_regex_wpa_enc_auth.match(line,0,out result)) {
             current_network.authentication = true;
             current_network.set_encyption_to_wpa();
-          }
-          else if( line_regex_wpa_enc.match(line,0,out result) )
+          } else if (line_regex_wpa_enc.match(line,0,out result)) {
             current_network.set_encyption_to_wpa();
-          else if( line_regex_adhoc.match(line,0,out result) )
+          } else if (line_regex_adhoc.match(line,0,out result)) {
             current_network.adhoc = true;
-          else if( line_regex_strength.match(line,0,out result) ) {
+          } else if (line_regex_strength.match(line,0,out result)) {
             current_network.set_strength( (int)(result.fetch(1).to_double()/result.fetch(2).to_double()*100) );
-          } else if( line_regex_start_address.match(line,0,out result) ) {
+          } else if (line_regex_start_address.match(line,0,out result)) {
             // We start a new. Check an see if the last one was something worth saving
-            if( current_network!=null && current_network.valid_network() )
+            if (current_network!=null && current_network.valid_network()) {
               found_network(current_network);
+            }
             //unowned Network lookup = null;// = networks.lookup(result.fetch(1));
-            if( networks.has_key(result.fetch(1)) ) {
+            if (networks.has_key(result.fetch(1))) {
               current_network = networks.get(result.fetch(1));
             } else {
               current_network = new Network();
               current_network.address = result.fetch(1);
             }
             current_network.visible = true;
-          } else if( line_regex_interface.match(line,0,out result) )
+          } else if (line_regex_interface.match(line,0,out result)) {
             wireless_interface = result.fetch(1);
+          }
         }
-        if( current_network!=null && current_network.valid_network() )
+        if (current_network!=null && current_network.valid_network()) {
           found_network(current_network);
+        }
       } // End lock
       wifi.visible_network_change(); //TODO check if something actually changed
     }
     private static void found_network(Network network) {
-      if( network.unsaved ) {
+      if (network.unsaved) {
         network.unsaved = false;
-        if( preferred_networks.has_key(network.address) ) {
+        if (preferred_networks.has_key(network.address)) {
           network.preferred_network = true;
           connect_to_suggestion(network);
         }
@@ -480,33 +491,34 @@ namespace iliwi {
       }
       visible_networks.add( network ); //TODO sort list (or is this for the view?)
     }
-    
+
     //TODO: Is this obsolete?
     private static void connect_to_suggestion(Network network) {
       // Get password
-      if( preferred_networks.has_key(network.address) ) {
+      if (preferred_networks.has_key(network.address) ) {
         network.password = preferred_networks.get(network.address).password;
         network.password_in_ascii = preferred_networks.get(network.address).password_in_ascii;
         network.username = preferred_networks.get(network.address).username;
         network.cert = preferred_networks.get(network.address).cert;
         network.cert_dir = preferred_networks.get(network.address).cert_dir;
       }
-      if( connection_suggestion==null )
+      if (connection_suggestion==null) {
         connection_suggestion = network;
-      else if( connection_suggestion.strength < network.strength )
+      } else if (connection_suggestion.strength < network.strength) {
         connection_suggestion = network;
-     
+      }
     }
-    
+
     private static unowned Network? suggest_network() {
       unowned Network? suggestion = null;
       foreach(Network network in networks.values) {
-        if( preferred_networks.has_key(network.address) ) {
-          if( suggestion == null )
+        if (preferred_networks.has_key(network.address)) {
+          if (suggestion == null) {
             suggestion = network;
-          else {
-            if( network.strength > suggestion.strength )
+          } else {
+            if (network.strength > suggestion.strength) {
               suggestion = network;
+            }
           }
         }
       }
