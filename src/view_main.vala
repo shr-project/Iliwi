@@ -75,7 +75,7 @@ namespace iliwi.View {
   private void generate_window() {
     win = new Win(null, "main", WinType.BASIC);
     win.title_set("iliwi");
-    win.smart_callback_add("delete-request", close_window_event );
+    win.smart_callback_add("delete,request", close_window_event );
     
     Bg bg = new Bg(win);
     bg.size_hint_weight_set(1, 1);
