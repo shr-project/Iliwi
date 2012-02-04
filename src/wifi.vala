@@ -369,7 +369,7 @@ namespace iliwi {
         line_regex_strength = new Regex("""^\s+Quality=(\d+)/(\d+) """);
         line_regex_interface = new Regex("""^(\w+\d+)\s*Scan completed :$""");
         line_regex_adhoc = new Regex("""^\s+Mode:Ad-Hoc$""");
-        line_regex_wpa_enc = new Regex("""^\s+Extra:(rsn|wpa)_ie=""");
+        line_regex_wpa_enc = new Regex("""^\s+IE: WPA""");
         line_regex_wpa_enc_auth = new Regex("""^\s+Extra:wpa_ie=dd160050f20101000050f20201000050f20201000050f201$""");
       } catch(Error e) {
         debug("Regex error!");
