@@ -236,6 +236,8 @@ namespace iliwi {
       loop.quit();
     }
     public static Network[] get_visible_networks() {
+      if (visible_networks == null)
+        return new Network[0];
       Network[] n = new Network[visible_networks.size];
       lock (visible_networks) {
         for(int i = 0; i<visible_networks.size; i++) {
