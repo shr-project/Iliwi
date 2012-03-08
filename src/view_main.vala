@@ -21,14 +21,13 @@ namespace iliwi.View {
   public const string SSL_CERT_DIR = "/etc/ssl/certs/";
 
   Win win;
-  Elm.Object[] gui_container;
-  Pager pager;
-  Box frontpage;
-  Label status;
-  Button button;
-  Label cert_status;
+  unowned Pager? pager;
+  unowned Box? frontpage;
+  unowned Label? status;
+  unowned Button? button;
+  unowned Label? cert_status;
   
-  Genlist wifilist;
+  unowned Genlist? wifilist;
   GenlistItemClass itc;
   GenlistItemClass itc2;
   bool items_in_list;
@@ -37,9 +36,9 @@ namespace iliwi.View {
   void show_main_window(string[] args) {
     Elm.init(args);
     
-    gui_container = {};
     items_in_list = false;
     
+    itc = new GenlistItemClass();
     //itc.item_style = "double_label";
     itc.item_style = "default";
     itc.func.text_get = genlist_get_label;
@@ -47,6 +46,7 @@ namespace iliwi.View {
     itc.func.state_get = null;
     itc.func.del = null;
 
+	itc2 = new GenlistItemClass();
     itc2.item_style = "default";
     itc2.func.text_get = certlist_get_label;
     itc2.func.content_get = null;
@@ -77,45 +77,44 @@ namespace iliwi.View {
     win.title_set("iliwi");
     win.smart_callback_add("delete,request", close_window_event );
     
-    Bg bg = new Bg(win);
+    unowned Bg? bg = Bg.add(win);
     bg.size_hint_weight_set(1, 1);
     bg.show();
     win.resize_object_add(bg);
-    gui_container += (owned) bg;
     
-    pager = new Pager(win);
+    pager = Pager.add(win);
     pager.size_hint_weight_set(1, 1);
     pager.size_hint_align_set(-1, -1);
     pager.show();
     
-    frontpage = new Box(win);
+    frontpage = Box.add(win);
     frontpage.size_hint_weight_set(1, 1);
     frontpage.size_hint_align_set(-1, -1);
     frontpage.homogeneous_set(false);
     frontpage.show();
     
-    wifilist = new Genlist(win);
+    wifilist = Genlist.add(win);
     wifilist.size_hint_weight_set(1, 1);
     wifilist.size_hint_align_set(-1, -1);
     refresh_list_elements();
     wifilist.show();
     frontpage.pack_end(wifilist);
     
-    Box box = new Box(win);
+    unowned Box? box = Box.add(win);
     box.horizontal_set(true);
     box.homogeneous_set(false);
     box.size_hint_weight_set(1,-1);
     box.size_hint_align_set(-1, -1);
     box.show();
 
-    status = new Label(win);
+    status = Label.add(win);
     status.size_hint_weight_set(0, 0);
     status.size_hint_align_set(0.5, 0.5);
     status.text_set(wifi.status);
     status.show();
     box.pack_end(status);
     
-    button = new Button(win);
+    button = Button.add(win);
     button.text_set("Refresh list");
     button.disabled_set(true);
     button.show();
@@ -123,7 +122,6 @@ namespace iliwi.View {
     box.pack_end(button);
     
     frontpage.pack_end(box);
-    gui_container += (owned) box;
     
     pager.content_push(frontpage);
     
@@ -138,12 +136,12 @@ namespace iliwi.View {
   private void refresh_list_elements() {
     wifilist.clear();
     items_in_list = false;
-    unowned GenlistItem listitem_tmp;
-    GenlistItem listitem_tmp2;
+    unowned GenlistItem? listitem_tmp;
+    unowned GenlistItem? listitem_tmp2;
     foreach(Network network in wifi.get_visible_networks()) {
       // Find place (sorted by preferred > strength
       if( items_in_list == false )
-        network.listitem = wifilist.item_append( ref itc, (void*)network, null, Elm.GenlistItemFlags.NONE, item_select );
+        network.listitem = wifilist.item_append( itc, (void*)network, null, Elm.GenlistItemType.NONE, item_select );
       else {
         listitem_tmp = wifilist.first_item_get();
         Network list_network = (Network) listitem_tmp.data_get();
@@ -151,16 +149,16 @@ namespace iliwi.View {
         while(found_place == false) {
           if( network.preferred_network && list_network.preferred_network==false ) {
             found_place = true;
-            network.listitem = wifilist.item_insert_before( ref itc, (void*)network, null, listitem_tmp, Elm.GenlistItemFlags.NONE, item_select );
+            network.listitem = wifilist.item_insert_before( itc, (void*)network, null, listitem_tmp, Elm.GenlistItemType.NONE, item_select );
           } else if( list_network.preferred_network==network.preferred_network && list_network.strength<=network.strength ) {
             found_place = true;
-            network.listitem = wifilist.item_insert_before( ref itc, (void*)network, null, listitem_tmp, Elm.GenlistItemFlags.NONE, item_select );
+            network.listitem = wifilist.item_insert_before( itc, (void*)network, null, listitem_tmp, Elm.GenlistItemType.NONE, item_select );
           } else { // Couldn't find a place to put it
             listitem_tmp2 = listitem_tmp.next_get();
             listitem_tmp = listitem_tmp2;
             if( listitem_tmp==null ) {
               found_place = true;
-              network.listitem = wifilist.item_append( ref itc, (void*)network, null, Elm.GenlistItemFlags.NONE, item_select );
+              network.listitem = wifilist.item_append( itc, (void*)network, null, Elm.GenlistItemType.NONE, item_select );
             } else
               list_network = (Network) listitem_tmp.data_get();
           }
@@ -171,23 +169,21 @@ namespace iliwi.View {
     }
   }
 
-  
-  Elm.Object[] gui_container2;
-  Entry password;
-  Entry username;
+
+  unowned Entry? password;
+  unowned Entry? username;
   unowned Network network;
-  //Box network_page;
+  //unowned Box? network_page;
   private void show_network(Network _network) {
-    gui_container2 = {};
     network = _network; 
 
-    Box outer_box = new Box(win);
+    unowned Box? outer_box = Box.add(win);
     outer_box.homogeneous_set(false);
     outer_box.size_hint_weight_set(1, 1);
     outer_box.size_hint_align_set(-1, -1);
     outer_box.show();
 
-    Scroller sc = new Scroller(win);
+    unowned Scroller? sc = Scroller.add(win);
     sc.bounce_set(false, false);
     sc.policy_set(Elm.ScrollerPolicy.OFF, Elm.ScrollerPolicy.AUTO);
     sc.size_hint_weight_set(1, 1);
@@ -195,136 +191,129 @@ namespace iliwi.View {
     outer_box.pack_end(sc);
     sc.show();
 
-    Box network_page = new Box(win);
+    unowned Box? network_page = Box.add(win);
     network_page.homogeneous_set(false);
     network_page.size_hint_weight_set(1, 1);
     network_page.size_hint_align_set(-1, -1);
     sc.content_set(network_page);
     network_page.show();
 
-    Frame title_padding = new Frame(win);
+    unowned Frame? title_padding = Frame.add(win);
     title_padding.style_set("pad_small");
     title_padding.size_hint_weight_set(1, 1);
     title_padding.size_hint_align_set(0.5, 0.5);
     title_padding.show();
 
-    Label title = new Label(win);
+    unowned Label? title = Label.add(win);
     title.size_hint_weight_set(1, 1);
     title.size_hint_align_set(0.5, 0.5);
     title.scale_set(2);
     title.text_set(network.get_title());
     title.show();
     title_padding.content_set(title);
-    gui_container2 += (owned) title;
 
     network_page.pack_end(title_padding);
-    gui_container2 += (owned) title_padding;
 
     if(network.authentication) {
-      Frame username_container = new Frame(win);
+      unowned Frame? username_container = Frame.add(win);
       username_container.text_set("Username");
       username_container.size_hint_weight_set(1, -1);
       username_container.size_hint_align_set(-1, -1);
-      username = new Entry(win);
+      username = Entry.add(win);
       username.single_line_set(true);
       username.entry_insert(network.username);
       username.show();
       username_container.content_set(username);
       username_container.show();
       network_page.pack_end(username_container);
-      gui_container2 += (owned) username_container;
     }
 
     if(network.encryption) {
-      Frame password_container = new Frame(win);
+      unowned Frame? password_container = Frame.add(win);
       password_container.text_set("Password");
       password_container.size_hint_weight_set(1, -1);
       password_container.size_hint_align_set(-1, -1);
-      password = new Entry(win);
+      password = Entry.add(win);
       password.single_line_set( true );
       password.entry_insert(network.password);
       password.show();
       password_container.content_set(password);
       password_container.show();
       network_page.pack_end(password_container);
-      gui_container2 += (owned) password_container;
       
       if(!network.authentication) {
-        Toggle ascii_hex = new Toggle(win);
+        unowned Check? ascii_hex = Check.add(win);
+        ascii_hex.style_set("toggle");
         ascii_hex.text_set("Password format");
-        ascii_hex.states_labels_set("ASCII","Hex");
+        ascii_hex.part_text_set("on", "ASCII");
+		ascii_hex.part_text_set("off", "Hex");
         ascii_hex.smart_callback_add("changed", change_network_ascii_hex );
         ascii_hex.state_set(network.password_in_ascii);
         ascii_hex.show();
         network_page.pack_end(ascii_hex);
-        gui_container2 += (owned) ascii_hex;
       }
     }
 
     if(network.authentication) {
-      Frame certificate_container = new Frame(win);
+      unowned Frame? certificate_container = Frame.add(win);
       certificate_container.text_set("Server Certificate");
       certificate_container.size_hint_weight_set(1, -1);
       certificate_container.size_hint_align_set(-1, -1);
       certificate_container.show();
  
-      Box cert_box = new Box(win);
+      unowned Box? cert_box = Box.add(win);
       cert_box.homogeneous_set(false);
       cert_box.size_hint_weight_set(1,-1);
       cert_box.size_hint_align_set(-1, -1);
       cert_box.show();
       certificate_container.content_set(cert_box);
 
-      cert_status = new Label(win);
+      cert_status = Label.add(win);
       cert_status.size_hint_weight_set(1, 1);
       cert_status.size_hint_align_set(-1, -1);
       certlist_text_set();
       cert_status.show();
       cert_box.pack_end(cert_status);
 
-      Box cert_button_box = new Box(win);
+      unowned Box? cert_button_box = Box.add(win);
       cert_button_box.horizontal_set(true);
       cert_button_box.homogeneous_set(false);
       cert_button_box.size_hint_weight_set(1, -1);
       cert_button_box.size_hint_align_set(-1, -1);
       cert_button_box.show();
 
-      Button cert_add_button = new Button(win);
+      unowned Button? cert_add_button = Button.add(win);
       cert_add_button.size_hint_weight_set(1, 1);
       cert_add_button.size_hint_align_set(-1, -1);
       cert_add_button.text_set("Select");
       cert_add_button.show();
       cert_button_box.pack_end(cert_add_button);
       cert_add_button.smart_callback_add("clicked", show_cert_chooser);
-      gui_container2 += (owned) cert_add_button;
 
-      Button cert_del_button = new Button(win);
+      unowned Button? cert_del_button = Button.add(win);
       cert_del_button.size_hint_weight_set(1, 1);
       cert_del_button.size_hint_align_set(-1, -1);
       cert_del_button.text_set("Clear");
       cert_del_button.show();
       cert_button_box.pack_end(cert_del_button);
       cert_del_button.smart_callback_add("clicked", clear_cert);
-      gui_container2 += (owned) cert_del_button;
 
       cert_box.pack_end(cert_button_box);
-      gui_container2 += (owned) cert_button_box;
 
       network_page.pack_end(certificate_container);
-      gui_container2 += (owned) cert_box;
-      gui_container2 += (owned) certificate_container;
     }
 
-    Toggle preferred = new Toggle(win);
+    unowned Check? preferred = Check.add(win);
+    preferred.style_set("toggle");
     preferred.smart_callback_add("changed", change_network_preferred );
     preferred.text_set( "Preferred network");
-    preferred.states_labels_set("Yes","No");
+    preferred.part_text_set("on", "Yes");
+	preferred.part_text_set("off", "No");
     preferred.state_set(network.preferred_network);
     preferred.show();
     network_page.pack_end(preferred);
-    gui_container2 += (owned) preferred;
     
-    Button button = new Button(win);
+    unowned Button? button = Button.add(win);
     button.size_hint_weight_set(1,-1);
     button.size_hint_align_set(-1,-1);
     button.text_set("Connect");
@@ -332,27 +321,22 @@ namespace iliwi.View {
     button.show();
     button.smart_callback_add("clicked", connect_to );
     network_page.pack_end(button);
-    gui_container2 += (owned) button;
     
-    button = new Button(win);
+    button = Button.add(win);
     button.size_hint_weight_set(1,-1);
     button.size_hint_align_set(-1,-1);
     button.text_set("Back");
     button.show();
     button.smart_callback_add("clicked", back_to_list );
     network_page.pack_end(button);
-    gui_container2 += (owned) button;
 
     pager.content_push(outer_box);
-    gui_container2 += (owned) outer_box;
-    gui_container2 += (owned) sc;
-    gui_container2 += (owned) network_page;
   }
 
   public class Certificate : GLib.Object, Gee.Comparable<Certificate> {
     public string cert = "";
     public string cert_dir = "";
-    public unowned GenlistItem listitem = null;
+    public unowned GenlistItem? listitem = null;
 
     public Certificate (string _cert, string _cert_dir) {
       cert = _cert;
@@ -379,40 +363,36 @@ namespace iliwi.View {
     }
   }
 
-  Elm.Object[] gui_container3;
+
   // Certificate chooser page
   private void show_cert_chooser() {
-    gui_container3 = {};
     ls = new ArrayList<Certificate>();
 
-    Box cert_chooser_page = new Box(win);
+    unowned Box? cert_chooser_page = Box.add(win);
     cert_chooser_page.size_hint_weight_set(1, 1);
     cert_chooser_page.size_hint_align_set(-1, -1);
     cert_chooser_page.homogeneous_set(false);
     cert_chooser_page.show();
     
-    Genlist certlist = new Genlist(win);
+    unowned Genlist? certlist = Genlist.add(win);
     certlist.size_hint_weight_set(1, 1);
     certlist.size_hint_align_set(-1, -1);
     list_cert_dir();
     foreach (Certificate cert in ls) {
-      cert.listitem = certlist.item_append(ref itc2, (void*)cert, null, Elm.GenlistItemFlags.NONE, cert_select);
+      cert.listitem = certlist.item_append(itc2, (void*)cert, null, Elm.GenlistItemType.NONE, cert_select);
     }
     certlist.show();
     cert_chooser_page.pack_end(certlist);
 
-    Button back_button = new Button(win);
+    unowned Button? back_button = Button.add(win);
     back_button.size_hint_weight_set(1,-1);
     back_button.size_hint_align_set(-1,-1);
     back_button.text_set("Back");
     back_button.show();
     back_button.smart_callback_add("clicked", back_to_net_definition);
     cert_chooser_page.pack_end(back_button);
-    gui_container3 += (owned) back_button;
 
     pager.content_push(cert_chooser_page);
-    gui_container3 += (owned) certlist;
-    gui_container3 += (owned) cert_chooser_page;
   }
 
   private void save_password() {
@@ -428,13 +408,13 @@ namespace iliwi.View {
     }
   }
   private void change_network_ascii_hex(Evas.Object obj, void* event_info) {
-    bool current_state = ((Toggle)obj).state_get();
+    bool current_state = ((Check)obj).state_get();
     if( current_state!=network.password_in_ascii )
       wifi.set_ascii_state(network,current_state);
   }
   private void change_network_preferred(Evas.Object obj, void* event_info) {
     save_password();
-    bool current_state = ((Toggle)obj).state_get();
+    bool current_state = ((Check)obj).state_get();
     if( current_state!=network.preferred_network )
       wifi.set_preferred_state(network,current_state);
   }
@@ -447,10 +427,8 @@ namespace iliwi.View {
     save_password();
     refresh_list_elements();
     pager.content_pop();
-    gui_container2 = {};
     password = null;
     username = null;
-    gui_container3 = {}; //inserted here due to error below in method back_to_net_definition()
   }
   private void back_to_net_definition() {
     certlist_text_set();
@@ -491,16 +469,16 @@ namespace iliwi.View {
     certlist_text_set();
   }
   
-  // Genlist stuff
-  private static string genlist_get_label( Elm.Object obj, string part ) {
+  // unowned Genlist? stuff
+  private static string genlist_get_label(void *data, Elm.Object obj, string part ) {
     /*if( strcmp(part,"elm.text")==0 )
       return "elm.text";
     if( strcmp(part,"elm.text.sub")==0 )
       return "elm.text.sub";*/
-    return ((Network)obj).pretty_string();
+    return ((Network)data).pretty_string();
   }
-  private static string certlist_get_label(Elm.Object obj, string part) {
-    string cert = ((Certificate)obj).cert;
+  private static string certlist_get_label(void *data,  Elm.Object obj, string part) {
+    string cert = ((Certificate)data).cert;
     return Certificate.trim_cert_name(cert);
   }
   public void item_select( Evas.Object obj, void* event_info) {

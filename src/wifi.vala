@@ -109,7 +109,7 @@ namespace iliwi {
     public bool unsaved = true;
     public bool visible = false;
     public bool preferred_network = false;
-    public unowned GenlistItem listitem = null;
+    public unowned GenlistItem? listitem = null;
     public NetworkStatus status {get; private set; default=NetworkStatus.UNCONNECTED;}
 
     public bool valid_network() {
@@ -458,9 +458,9 @@ namespace iliwi {
           } else if (line_regex_adhoc.match(line,0,out result)) {
             current_network.adhoc = true;
           } else if (line_regex_strength.match(line,0,out result)) {
-            current_network.set_strength( (int)(result.fetch(1).to_double()/result.fetch(2).to_double()*100) );
+            current_network.set_strength( (int)(double.parse(result.fetch(1))/double.parse(result.fetch(2))*100) );
           } else if (line_regex_start_address.match(line,0,out result)) {
-            // We start a new. Check an see if the last one was something worth saving
+            // We start a new. unowned Check? an see if the last one was something worth saving
             if (current_network!=null && current_network.valid_network()) {
               found_network(current_network);
             }
