@@ -21,7 +21,7 @@ namespace iliwi.View {
   public const string SSL_CERT_DIR = "/etc/ssl/certs/";
 
   Win win;
-  unowned Pager? pager;
+  unowned Naviframe? pager;
   unowned Box? frontpage;
   unowned Label? status;
   unowned Button? button;
@@ -82,7 +82,7 @@ namespace iliwi.View {
     bg.show();
     win.resize_object_add(bg);
     
-    pager = Pager.add(win);
+    pager = Naviframe.add(win);
     pager.size_hint_weight_set(1, 1);
     pager.size_hint_align_set(-1, -1);
     pager.show();
@@ -123,7 +123,9 @@ namespace iliwi.View {
     
     frontpage.pack_end(box);
     
-    pager.content_push(frontpage);
+    unowned NaviframeItem? it;
+    it = pager.item_simple_push(frontpage);
+    it.title_visible_set(false);
     
     win.resize_object_add(pager);
     win.show();
@@ -330,7 +332,9 @@ namespace iliwi.View {
     button.smart_callback_add("clicked", back_to_list );
     network_page.pack_end(button);
 
-    pager.content_push(outer_box);
+    unowned NaviframeItem? it;
+    it = pager.item_simple_push(outer_box);
+    it.title_visible_set(false);
   }
 
   public class Certificate : GLib.Object, Gee.Comparable<Certificate> {
@@ -392,7 +396,10 @@ namespace iliwi.View {
     back_button.smart_callback_add("clicked", back_to_net_definition);
     cert_chooser_page.pack_end(back_button);
 
-    pager.content_push(cert_chooser_page);
+
+    unowned NaviframeItem? it;
+    it = pager.item_simple_push(cert_chooser_page);
+    it.title_visible_set(false);
   }
 
   private void save_password() {
@@ -426,13 +433,13 @@ namespace iliwi.View {
   private void back_to_list() {
     save_password();
     refresh_list_elements();
-    pager.content_pop();
+    pager.item_pop();
     password = null;
     username = null;
   }
   private void back_to_net_definition() {
     certlist_text_set();
-    pager.content_pop();
+    pager.item_pop();
 //  gui_container3 = {}; causes error - see below, moved to method back_to_list()
 //ERR:elementary elm_widget.c:1303 elm_widget_type_check() Passing Object: 0x1ce5e0, of type: '(unknown)' when expecting type: 'genlist'
   }
