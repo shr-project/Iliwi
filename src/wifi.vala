@@ -371,7 +371,7 @@ namespace iliwi {
         line_regex_strength = new Regex("""^\s+Quality=(\d+)/(\d+) """);
         line_regex_interface = new Regex("""^(\w+\d+)\s*Scan completed :$""");
         line_regex_adhoc = new Regex("""^\s+Mode:Ad-Hoc$""");
-        line_regex_wpa_enc = new Regex("""^\s+IE: WPA""");
+        line_regex_wpa_enc = new Regex("""^\s+(IE: [[:alnum:]. /]*WPA|Extra:(rsn|wpa)_ie=)""");
         line_regex_wpa_enc_auth = new Regex("""^\s+Extra:wpa_ie=dd160050f20101000050f20201000050f20201000050f201$""");
       } catch(Error e) {
         debug("Regex error!");
@@ -533,12 +533,25 @@ namespace iliwi {
 WEP
                     Extra:bcn_int=100
                     Extra:wmm_ie=dd180050f2020101800003a4000027a4000042435e0062322f00
+
 WPA-PSK
+                    IE: WPA Version 1
+                        Group Cipher : TKIP
+                        Pairwise Ciphers (1) : TKIP
+                        Authentication Suites (1) : PSK
+
+WPA-PSK GTA02
                     Extra:bcn_int=100
                     Extra:wpa_ie=dd180050f20101000050f20201000050f20201000050f2020c00
                     Extra:wmm_ie=dd180050f2020101800003a4000027a4000042435e0062322f00
 
 WPA2-PSK
+                    IE: IEEE 802.11i/WPA2 Version 1
+                        Group Cipher : CCMP
+                        Pairwise Ciphers (1) : CCMP
+                        Authentication Suites (1) : PSK
+
+WPA2-PSK GTA02
                     Extra:bcn_int=100
                     Extra:rsn_ie=30140100000fac040100000fac040100000fac020c00
                     Extra:wmm_ie=dd180050f2020101800003a4000027a4000042435e0062322f00
